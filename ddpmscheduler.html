@@ -178,9 +178,96 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
                     <div class="image-container">
                         <img src="images/betas.jpg">
                     </div>
+
+
                 </p>
             </div>
         </div>
+    </div>
+
+        <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+            <div class="code">
+                <pre><code class="language-python">
+
+        # Rescale for zero SNR
+        if rescale_betas_zero_snr:
+            self.betas = rescale_zero_terminal_snr(self.betas)
+
+                </code></pre>
+            </div>
+            <div class="text">
+                <p class="text-line" data-line="1">
+                    &emsp;&emsp;围绕DDPM加噪过程最后一步并没有完全达到zero SNR的问题，进行优化改造。rescale_zero_terminal_snr就是一种方法，使得最后一步加噪得到的就是完全噪音，不包含任何原始数据成分。具体可参考论文https://arxiv.org/pdf/2305.08891.pdf
+                </p>
+            </div>
+        </div>
+
+        <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+            <div class="code">
+                <pre><code class="language-python">
+        self.alphas = 1.0 - self.betas
+        self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
+        self.one = torch.tensor(1.0)
+                </code></pre>
+            </div>
+            <div class="text">
+                <p class="text-line" data-line="1">
+                    &emsp;&emsp;为了保证后续讲解的一致性已经与代码的吻合，此处统一上述公式化表达。即\( \bf x_t = \sqrt {\alpha_t} \bf x_{t-1} + \sqrt{\beta_t} \bf \epsilon_t, \alpha_t + \beta_t = 1  \)
+\(
+\begin{aligned}
+ \bf x_t
+ & = \sqrt {\alpha_t} \bf x_{t-1} + \sqrt {\beta_t} \epsilon_t \\
+ & = \sqrt {\alpha_t} (\sqrt {\alpha_{t-1}} \bf x_{t-2} + \sqrt {\beta_{t-1}}
+  \epsilon_{t-1})+ \sqrt {\beta_t} \epsilon_t \\
+ & = \cdots \\
+ & = \sqrt{(\alpha_t\cdots\alpha_1)}\bf x_0 + \sqrt{(\alpha_t\cdots\alpha_2)\beta_1}\epsilon_1 + \sqrt {(\alpha_t\cdots\alpha_3)\beta_2}\epsilon_2 + \cdots + \sqrt {\alpha_t\beta_{t-1}}\epsilon_{t-1} + \sqrt {\beta_t} \epsilon_t \\
+\end{aligned}
+\)
+
+上一步公式除了 \( \bf x_0 \)项之后，所有项可以看作是多个相互独立的正态噪音之和。也等价于从均值为0，方差为 \( (\alpha_t\cdots\alpha_2)\beta_1 + (\alpha_t\cdots\alpha_3)\beta_2 + \cdots + \alpha_t\beta_{t-1} + \beta_t \) 正态分布取样。
+\( \alpha_t\cdots\alpha_1 + (\alpha_t\cdots\alpha_2)\beta_1 + (\alpha_t\cdots\alpha_3)\beta_2 + \cdots + \alpha_t\beta_{t-1} + \beta_t  = 1 \) <br>
+
+&emsp;&emsp;因此可以改写
+\( \bf x_t = \sqrt { \alpha_t\cdots\alpha_1 }  \bf x_0 + \sqrt {1-\alpha_t\cdots\alpha_1} \bf{\bar \epsilon_t}, \bar \epsilon_t \sim \mathcal N(0, I) \)
+或者 \( \bf x_t =  \sqrt{\bar{\alpha}_t} \bf x_0 + \sqrt{1-\bar{\alpha}_t} \bf{\bar \epsilon_t} \), 其中\( \bar{\alpha}_t = \alpha_t\cdots\alpha_1  \) <br>
+
+                    至此关于代码中self.alphas, self.betas, self.alphas_cumprod都解释清楚。<br>
+                    1. self.betas 是最开始确定的噪音的系数，参考上图 <br>
+                    2. self.alphas 是根据 \( \alpha_t + \beta_t = 1  \)得到 <br>
+                    3. self.alphas_cumprod 就是 \(\alpha_t\)的累积。<br>
+
+
+                </p>
+            </div>
+        </div>
+
+        <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+            <div class="code">
+                <pre><code class="language-python">
+                    这里是代码
+                </code></pre>
+            </div>
+            <div class="text">
+                <p class="text-line" data-line="1">
+                    这里是文本
+                </p>
+            </div>
+        </div>
+
+
+        <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+            <div class="code">
+                <pre><code class="language-python">
+                    这里是代码
+                </code></pre>
+            </div>
+            <div class="text">
+                <p class="text-line" data-line="1">
+                    这里是文本
+                </p>
+            </div>
+        </div>
+
     </div>
 
     <script>
