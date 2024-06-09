@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,13 +13,17 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
+            overflow-x: hidden; /* 禁止水平滚动 */
         }
+
         .container {
             display: flex;
             flex-direction: column;
             width: 100%;
-            background-color: #f5f5f5; /* 设置容器背景色 */
+            background-color: #f5f5f5;
+            /* 设置容器背景色 */
         }
+
         .block {
             display: flex;
             flex-direction: row;
@@ -26,97 +31,114 @@
             border-top: 1px solid rgba(0, 0, 0, 0.1);
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             cursor: pointer;
-            background-color: inherit; /* 继承父容器背景色 */
+            background-color: inherit;
+            /* 继承父容器背景色 */
         }
-        .code, .text {
+
+        .code,
+        .text {
             padding: 20px;
             box-sizing: border-box;
             transition: background-color 0.3s;
+            overflow: auto; /* 确保长代码不会影响布局 */
         }
+
         .code {
             width: 50%;
-            background-color: #f0f0f0; /* 设置代码块默认背景色 */
+            background-color: #f0f0f0;
+            /* 设置代码块默认背景色 */
         }
+
         .text {
             width: 50%;
-            background-color: #f5f5f5; /* 设置文本块默认背景色 */
+            font-family: 'Noto Serif SC', sans-serif;
+            background-color: #f5f5f5;
+            /* 设置文本块默认背景色 */
         }
+
         .image-container {
-            text-align: center; /* 使图片在容器内居中 */
+            text-align: center;
+            /* 使图片在容器内居中 */
         }
+
         .image-container img {
-            max-width: 100%; /* 确保图片在容器内保持合适的比例 */
-            height: auto; /* 保持图片比例 */
+            max-width: 100%;
+            /* 确保图片在容器内保持合适的比例 */
+            height: auto;
+            /* 保持图片比例 */
         }
+
         pre {
             margin: 0;
             background-color: inherit;
         }
-        .block.highlight .code, .block.highlight .text {
+
+        .block.highlight .code,
+        .block.highlight .text {
             background-color: #FFFFFF !important;
         }
     </style>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
+
 <body>
     <div class="container">
         <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
             <div class="code">
                 <pre><code class="language-python">
+                    class DDPMScheduler(SchedulerMixin, ConfigMixin):
+                        """
+                        `DDPMScheduler` explores the connections between denoising score matching and Langevin dynamics sampling.
 
-class DDPMScheduler(SchedulerMixin, ConfigMixin):
-    """
-    `DDPMScheduler` explores the connections between denoising score matching and Langevin dynamics sampling.
+                        This model inherits from [`SchedulerMixin`] and [`ConfigMixin`]. Check the superclass documentation for the generic
+                        methods the library implements for all schedulers such as loading and saving.
 
-    This model inherits from [`SchedulerMixin`] and [`ConfigMixin`]. Check the superclass documentation for the generic
-    methods the library implements for all schedulers such as loading and saving.
+                        Args:
+                            num_train_timesteps (`int`, defaults to 1000):
+                                The number of diffusion steps to train the model.
+                            beta_start (`float`, defaults to 0.0001):
+                                The starting `beta` value of inference.
+                            beta_end (`float`, defaults to 0.02):
+                                The final `beta` value.
+                            beta_schedule (`str`, defaults to `"linear"`):
+                                The beta schedule, a mapping from a beta range to a sequence of betas for stepping the model. Choose from
+                                `linear`, `scaled_linear`, or `squaredcos_cap_v2`.
+                            trained_betas (`np.ndarray`, *optional*):
+                                An array of betas to pass directly to the constructor without using `beta_start` and `beta_end`.
+                            variance_type (`str`, defaults to `"fixed_small"`):
+                                Clip the variance when adding noise to the denoised sample. Choose from `fixed_small`, `fixed_small_log`,
+                                `fixed_large`, `fixed_large_log`, `learned` or `learned_range`.
+                            clip_sample (`bool`, defaults to `True`):
+                                Clip the predicted sample for numerical stability.
+                            clip_sample_range (`float`, defaults to 1.0):
+                                The maximum magnitude for sample clipping. Valid only when `clip_sample=True`.
+                            prediction_type (`str`, defaults to `epsilon`, *optional*):
+                                Prediction type of the scheduler function; can be `epsilon` (predicts the noise of the diffusion process),
+                                `sample` (directly predicts the noisy sample`) or `v_prediction` (see section 2.4 of [Imagen
+                                Video](https://imagen.research.google/video/paper.pdf) paper).
+                            thresholding (`bool`, defaults to `False`):
+                                Whether to use the "dynamic thresholding" method. This is unsuitable for latent-space diffusion models such
+                                as Stable Diffusion.
+                            dynamic_thresholding_ratio (`float`, defaults to 0.995):
+                                The ratio for the dynamic thresholding method. Valid only when `thresholding=True`.
+                            sample_max_value (`float`, defaults to 1.0):
+                                The threshold value for dynamic thresholding. Valid only when `thresholding=True`.
+                            timestep_spacing (`str`, defaults to `"leading"`):
+                                The way the timesteps should be scaled. Refer to Table 2 of the [Common Diffusion Noise Schedules and
+                                Sample Steps are Flawed](https://huggingface.co/papers/2305.08891) for more information.
+                            steps_offset (`int`, defaults to 0):
+                                An offset added to the inference steps. You can use a combination of `offset=1` and
+                                `set_alpha_to_one=False` to make the last step use step 0 for the previous alpha product like in Stable
+                                Diffusion.
+                            rescale_betas_zero_snr (`bool`, defaults to `False`):
+                                Whether to rescale the betas to have zero terminal SNR. This enables the model to generate very bright and
+                                dark samples instead of limiting it to samples with medium brightness. Loosely related to
+                                [`--offset_noise`](https://github.com/huggingface/diffusers/blob/74fd735eb073eb1d774b1ab4154a0876eb82f055/examples/dreambooth/train_dreambooth.py#L506).
+                        """
 
-    Args:
-        num_train_timesteps (`int`, defaults to 1000):
-            The number of diffusion steps to train the model.
-        beta_start (`float`, defaults to 0.0001):
-            The starting `beta` value of inference.
-        beta_end (`float`, defaults to 0.02):
-            The final `beta` value.
-        beta_schedule (`str`, defaults to `"linear"`):
-            The beta schedule, a mapping from a beta range to a sequence of betas for stepping the model. Choose from
-            `linear`, `scaled_linear`, or `squaredcos_cap_v2`.
-        trained_betas (`np.ndarray`, *optional*):
-            An array of betas to pass directly to the constructor without using `beta_start` and `beta_end`.
-        variance_type (`str`, defaults to `"fixed_small"`):
-            Clip the variance when adding noise to the denoised sample. Choose from `fixed_small`, `fixed_small_log`,
-            `fixed_large`, `fixed_large_log`, `learned` or `learned_range`.
-        clip_sample (`bool`, defaults to `True`):
-            Clip the predicted sample for numerical stability.
-        clip_sample_range (`float`, defaults to 1.0):
-            The maximum magnitude for sample clipping. Valid only when `clip_sample=True`.
-        prediction_type (`str`, defaults to `epsilon`, *optional*):
-            Prediction type of the scheduler function; can be `epsilon` (predicts the noise of the diffusion process),
-            `sample` (directly predicts the noisy sample`) or `v_prediction` (see section 2.4 of [Imagen
-            Video](https://imagen.research.google/video/paper.pdf) paper).
-        thresholding (`bool`, defaults to `False`):
-            Whether to use the "dynamic thresholding" method. This is unsuitable for latent-space diffusion models such
-            as Stable Diffusion.
-        dynamic_thresholding_ratio (`float`, defaults to 0.995):
-            The ratio for the dynamic thresholding method. Valid only when `thresholding=True`.
-        sample_max_value (`float`, defaults to 1.0):
-            The threshold value for dynamic thresholding. Valid only when `thresholding=True`.
-        timestep_spacing (`str`, defaults to `"leading"`):
-            The way the timesteps should be scaled. Refer to Table 2 of the [Common Diffusion Noise Schedules and
-            Sample Steps are Flawed](https://huggingface.co/papers/2305.08891) for more information.
-        steps_offset (`int`, defaults to 0):
-            An offset added to the inference steps. You can use a combination of `offset=1` and
-            `set_alpha_to_one=False` to make the last step use step 0 for the previous alpha product like in Stable
-            Diffusion.
-        rescale_betas_zero_snr (`bool`, defaults to `False`):
-            Whether to rescale the betas to have zero terminal SNR. This enables the model to generate very bright and
-            dark samples instead of limiting it to samples with medium brightness. Loosely related to
-            [`--offset_noise`](https://github.com/huggingface/diffusers/blob/74fd735eb073eb1d774b1ab4154a0876eb82f055/examples/dreambooth/train_dreambooth.py#L506).
-    """
-
-    _compatibles = [e.name for e in KarrasDiffusionSchedulers]
-    order = 1
+                        _compatibles = [e.name for e in KarrasDiffusionSchedulers]
+                        order = 1
 
                 </code></pre>
             </div>
@@ -127,57 +149,58 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
             <div class="code">
                 <pre><code class="language-python">
-    @register_to_config
-    def __init__(
-        self,
-        num_train_timesteps: int = 1000,
-        beta_start: float = 0.0001,
-        beta_end: float = 0.02,
-        beta_schedule: str = "linear",
-        trained_betas: Optional[Union[np.ndarray, List[float]]] = None,
-        variance_type: str = "fixed_small",
-        clip_sample: bool = True,
-        prediction_type: str = "epsilon",
-        thresholding: bool = False,
-        dynamic_thresholding_ratio: float = 0.995,
-        clip_sample_range: float = 1.0,
-        sample_max_value: float = 1.0,
-        timestep_spacing: str = "leading",
-        steps_offset: int = 0,
-        rescale_betas_zero_snr: int = False,
-    ):
-        if trained_betas is not None:
-            self.betas = torch.tensor(trained_betas, dtype=torch.float32)
-        elif beta_schedule == "linear":
-            self.betas = torch.linspace(beta_start, beta_end, num_train_timesteps, dtype=torch.float32)
-        elif beta_schedule == "scaled_linear":
-            # this schedule is very specific to the latent diffusion model.
-            self.betas = torch.linspace(beta_start**0.5, beta_end**0.5, num_train_timesteps, dtype=torch.float32) ** 2
-        elif beta_schedule == "squaredcos_cap_v2":
-            # Glide cosine schedule
-            self.betas = betas_for_alpha_bar(num_train_timesteps)
-        elif beta_schedule == "sigmoid":
-            # GeoDiff sigmoid schedule
-            betas = torch.linspace(-6, 6, num_train_timesteps)
-            self.betas = torch.sigmoid(betas) * (beta_end - beta_start) + beta_start
-        else:
-            raise NotImplementedError(f"{beta_schedule} does is not implemented for {self.__class__}")
+                    @register_to_config
+                    def __init__(
+                        self,
+                        num_train_timesteps: int = 1000,
+                        beta_start: float = 0.0001,
+                        beta_end: float = 0.02,
+                        beta_schedule: str = "linear",
+                        trained_betas: Optional[Union[np.ndarray, List[float]]] = None,
+                        variance_type: str = "fixed_small",
+                        clip_sample: bool = True,
+                        prediction_type: str = "epsilon",
+                        thresholding: bool = False,
+                        dynamic_thresholding_ratio: float = 0.995,
+                        clip_sample_range: float = 1.0,
+                        sample_max_value: float = 1.0,
+                        timestep_spacing: str = "leading",
+                        steps_offset: int = 0,
+                        rescale_betas_zero_snr: int = False,
+                    ):
+                        if trained_betas is not None:
+                            self.betas = torch.tensor(trained_betas, dtype=torch.float32)
+                        elif beta_schedule == "linear":
+                            self.betas = torch.linspace(beta_start, beta_end, num_train_timesteps, dtype=torch.float32)
+                        elif beta_schedule == "scaled_linear":
+                            # this schedule is very specific to the latent diffusion model.
+                            self.betas = torch.linspace(beta_start**0.5, beta_end**0.5, num_train_timesteps, dtype=torch.float32) ** 2
+                        elif beta_schedule == "squaredcos_cap_v2":
+                            # Glide cosine schedule
+                            self.betas = betas_for_alpha_bar(num_train_timesteps)
+                        elif beta_schedule == "sigmoid":
+                            # GeoDiff sigmoid schedule
+                            betas = torch.linspace(-6, 6, num_train_timesteps)
+                            self.betas = torch.sigmoid(betas) * (beta_end - beta_start) + beta_start
+                        else:
+                            raise NotImplementedError(f"{beta_schedule} does is not implemented for {self.__class__}")
 
                 </code></pre>
             </div>
             <div class="text">
                 <p class="text-line" data-line="1">
-                    &emsp;&emsp;设 \( \bf x_0 \)表示一张图片, 逐步在当前图片上添加微小噪音，经过T步得到T张中间图片，依次为 \( \bf x_1, \bf x_2, \cdots, \bf x_T \)。添加噪声的计算公式如下:
-\( \bf x_t = \alpha_t \bf x_{t-1} + \beta_t \bf \epsilon_t  \)
-其中，
-\( \bf \epsilon_t \sim \mathcal N(0,\mit I) \)
-\( \alpha_t^2 + \beta_t^2 = 1, \alpha_t,\beta_t > 0 \)
-为了实现每次添加噪音都很小，因此从标准正态分布取样，然后乘以一个很小的系数\( \beta_t \)就可以保证。<br>
+                    &emsp;&emsp;设 \( \bf x_0 \)表示一张图片, 逐步在当前图片上添加微小噪音，经过T步得到T张中间图片，依次为 \( \bf x_1, \bf x_2, \cdots, \bf
+                    x_T \)。添加噪声的计算公式如下:
+                    \( \bf x_t = \alpha_t \bf x_{t-1} + \beta_t \bf \epsilon_t \)
+                    其中，
+                    \( \bf \epsilon_t \sim \mathcal N(0,\mit I) \)
+                    \( \alpha_t^2 + \beta_t^2 = 1, \alpha_t,\beta_t > 0 \)
+                    为了实现每次添加噪音都很小，因此从标准正态分布取样，然后乘以一个很小的系数\( \beta_t \)就可以保证。<br>
                     &emsp;&emsp;上面解释了为什么要设置\( \beta_t \)是一个很小的数字，取值范围限制在了[0.0001, 0.02]这个范围。<br>
                     &emsp;&emsp;代码给出了beta序列的几种具体的取值方式。其取值如下图所示
-                    <div class="image-container">
-                        <img src="images/betas.jpg">
-                    </div>
+                <div class="image-container">
+                    <img src="images/betas.jpg">
+                </div>
 
 
                 </p>
@@ -185,88 +208,255 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         </div>
     </div>
 
-        <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
-            <div class="code">
-                <pre><code class="language-python">
+    <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+        <div class="code">
+            <pre><code class="language-python">
 
-        # Rescale for zero SNR
-        if rescale_betas_zero_snr:
-            self.betas = rescale_zero_terminal_snr(self.betas)
+                # Rescale for zero SNR
+                if rescale_betas_zero_snr:
+                    self.betas = rescale_zero_terminal_snr(self.betas)
 
-                </code></pre>
-            </div>
-            <div class="text">
-                <p class="text-line" data-line="1">
-                    &emsp;&emsp;围绕DDPM加噪过程最后一步并没有完全达到zero SNR的问题，进行优化改造。rescale_zero_terminal_snr就是一种方法，使得最后一步加噪得到的就是完全噪音，不包含任何原始数据成分。具体可参考论文https://arxiv.org/pdf/2305.08891.pdf
-                </p>
-            </div>
+            </code></pre>
         </div>
+        <div class="text">
+            <p class="text-line" data-line="1">
+                &emsp;&emsp;围绕DDPM加噪过程最后一步并没有完全达到zero
+                SNR的问题，进行优化改造。rescale_zero_terminal_snr就是一种方法，使得最后一步加噪得到的就是完全噪音，不包含任何原始数据成分。具体可参考论文 <a
+                    href="https://arxiv.org/pdf/2305.08891.pdf" target="_blank">https://arxiv.org/pdf/2305.08891.pdf</a>
 
-        <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
-            <div class="code">
-                <pre><code class="language-python">
+            </p>
+        </div>
+    </div>
+
+    <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+        <div class="code">
+            <pre><code class="language-python">
         self.alphas = 1.0 - self.betas
         self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
         self.one = torch.tensor(1.0)
                 </code></pre>
-            </div>
-            <div class="text">
-                <p class="text-line" data-line="1">
-                    &emsp;&emsp;为了保证后续讲解的一致性已经与代码的吻合，此处统一上述公式化表达。即\( \bf x_t = \sqrt {\alpha_t} \bf x_{t-1} + \sqrt{\beta_t} \bf \epsilon_t, \alpha_t + \beta_t = 1  \)
-\(
-\begin{aligned}
- \bf x_t
- & = \sqrt {\alpha_t} \bf x_{t-1} + \sqrt {\beta_t} \epsilon_t \\
- & = \sqrt {\alpha_t} (\sqrt {\alpha_{t-1}} \bf x_{t-2} + \sqrt {\beta_{t-1}}
-  \epsilon_{t-1})+ \sqrt {\beta_t} \epsilon_t \\
- & = \cdots \\
- & = \sqrt{(\alpha_t\cdots\alpha_1)}\bf x_0 + \sqrt{(\alpha_t\cdots\alpha_2)\beta_1}\epsilon_1 + \sqrt {(\alpha_t\cdots\alpha_3)\beta_2}\epsilon_2 + \cdots + \sqrt {\alpha_t\beta_{t-1}}\epsilon_{t-1} + \sqrt {\beta_t} \epsilon_t \\
-\end{aligned}
-\)
+        </div>
+        <div class="text">
+                &emsp;&emsp;为了保证后续讲解的一致性已经与代码的吻合，此处统一上述公式化表达。即
+                <div style="text-align: center;">
+                    \( \bf x_t = \sqrt {\alpha_t} \bf x_{t-1} + \sqrt{\beta_t} \bf \epsilon_t, \alpha_t + \beta_t = 1 \) 
+                </div>
+                继续推导得到
+                <div style="text-align: center;">
+                    \(
+                    \begin{aligned}
+                    \bf x_t
+                    & = \sqrt {\alpha_t} \bf x_{t-1} + \sqrt {\beta_t} \epsilon_t \\
+                    & = \sqrt {\alpha_t} (\sqrt {\alpha_{t-1}} \bf x_{t-2} + \sqrt {\beta_{t-1}}
+                    \epsilon_{t-1})+ \sqrt {\beta_t} \epsilon_t \\
+                    & = \cdots \\
+                    & = \sqrt{(\alpha_t\cdots\alpha_1)}\bf x_0 + \sqrt{(\alpha_t\cdots\alpha_2)\beta_1}\epsilon_1 + \sqrt
+                    {(\alpha_t\cdots\alpha_3)\beta_2}\epsilon_2 + \cdots + \sqrt {\alpha_t\beta_{t-1}}\epsilon_{t-1} + \sqrt
+                    {\beta_t} \epsilon_t \\
+                    \end{aligned}
+                    \)
+                </div>
+                上一步公式除了\( \bf x_0 \)项，其余所有项可以看作是多个相互独立的正态噪音之和。也等价于从均值为0，方差为 \( (\alpha_t\cdots\alpha_2)\beta_1 + (\alpha_t\cdots\alpha_3)\beta_2 + \cdots + \alpha_t\beta_{t-1} + \beta_t \) 正态分布取样。
+                由于
+                \( \alpha_t\cdots\alpha_1 + (\alpha_t\cdots\alpha_2)\beta_1 + (\alpha_t\cdots\alpha_3)\beta_2 + \cdots +
+                \alpha_t\beta_{t-1} + \beta_t = 1 \) 
+                因此可以改写为
+                <div style="text-align: center;">
+                    \( \bf x_t = \sqrt { \alpha_t\cdots\alpha_1 } \bf x_0 + \sqrt {1-\alpha_t\cdots\alpha_1} \bf{\bar
+                        \epsilon_t}, \bar \epsilon_t \sim \mathcal N(0, I) \)
+                </div>
+                或者 
+                <div style="text-align: center;">
+                    \( \bf x_t = \sqrt{\bar{\alpha}_t} \bf x_0 + \sqrt{1-\bar{\alpha}_t} \bf{\bar \epsilon_t} \), 其中\( \bar{\alpha}_t = \alpha_t\cdots\alpha_1 \)
+                </div>
+                <br>
+                至此关于代码中self.alphas, self.betas, self.alphas_cumprod都解释清楚。
+            <ul>
+                <li> self.betas 是最开始确定的噪音的系数，参考上图 </li>
+                <li> self.alphas 是根据 \( \alpha_t + \beta_t = 1 \)得到 </li>
+                <li> self.alphas_cumprod 就是 \(\alpha_t\)的累积。</li>
+            </ul>
 
-上一步公式除了 \( \bf x_0 \)项之后，所有项可以看作是多个相互独立的正态噪音之和。也等价于从均值为0，方差为 \( (\alpha_t\cdots\alpha_2)\beta_1 + (\alpha_t\cdots\alpha_3)\beta_2 + \cdots + \alpha_t\beta_{t-1} + \beta_t \) 正态分布取样。
-\( \alpha_t\cdots\alpha_1 + (\alpha_t\cdots\alpha_2)\beta_1 + (\alpha_t\cdots\alpha_3)\beta_2 + \cdots + \alpha_t\beta_{t-1} + \beta_t  = 1 \) <br>
+        </div>
+    </div>
 
-&emsp;&emsp;因此可以改写
-\( \bf x_t = \sqrt { \alpha_t\cdots\alpha_1 }  \bf x_0 + \sqrt {1-\alpha_t\cdots\alpha_1} \bf{\bar \epsilon_t}, \bar \epsilon_t \sim \mathcal N(0, I) \)
-或者 \( \bf x_t =  \sqrt{\bar{\alpha}_t} \bf x_0 + \sqrt{1-\bar{\alpha}_t} \bf{\bar \epsilon_t} \), 其中\( \bar{\alpha}_t = \alpha_t\cdots\alpha_1  \) <br>
+    <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+        <div class="code">
+            <pre><code class="language-python">
+                # standard deviation of the initial noise distribution
+                self.init_noise_sigma = 1.0
+        
+                # setable values
+                self.custom_timesteps = False
+                self.num_inference_steps = None
+                self.timesteps = torch.from_numpy(np.arange(0, num_train_timesteps)[::-1].copy())
+        
+                self.variance_type = variance_type
+            </code></pre>
+        </div>
+        <div class="text">
+        </div>
+    </div>
 
-                    至此关于代码中self.alphas, self.betas, self.alphas_cumprod都解释清楚。<br>
-                    1. self.betas 是最开始确定的噪音的系数，参考上图 <br>
-                    2. self.alphas 是根据 \( \alpha_t + \beta_t = 1  \)得到 <br>
-                    3. self.alphas_cumprod 就是 \(\alpha_t\)的累积。<br>
+    <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+        <div class="code">
+            <pre><code class="language-python">
+                def set_timesteps(
+                    self,
+                    num_inference_steps: Optional[int] = None,
+                    device: Union[str, torch.device] = None,
+                    timesteps: Optional[List[int]] = None,
+                ):
+                    """
+                    Sets the discrete timesteps used for the diffusion chain (to be run before inference).
+            
+                    Args:
+                        num_inference_steps (`int`):
+                            The number of diffusion steps used when generating samples with a pre-trained model. If used,
+                            `timesteps` must be `None`.
+                        device (`str` or `torch.device`, *optional*):
+                            The device to which the timesteps should be moved to. If `None`, the timesteps are not moved.
+                        timesteps (`List[int]`, *optional*):
+                            Custom timesteps used to support arbitrary spacing between timesteps. If `None`, then the default
+                            timestep spacing strategy of equal spacing between timesteps is used. If `timesteps` is passed,
+                            `num_inference_steps` must be `None`.
+            
+                    """
+
+            </code></pre>
+        </div>
+        <div class="text">
+            <ul>
+                <li>
+                    num_inference_steps: 当使用预训练模型生成样本时，扩散模型用于迭代降噪的步数。它与timesteps是互斥的，只能一个赋值另一个未空。
+                </li>
+                <li>
+                    timesteps: 自定义的降噪步伐。走多少步，大跨步或者小碎步都可以通过timesteps来设置。如果设置了num_inference_steps，仅是知道要走多少步，但是如何走没有告知，需要代码中进一步明确。
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+        <div class="code">
+            <pre><code class="language-python">
+                if num_inference_steps is not None and timesteps is not None:
+                raise ValueError("Can only pass one of `num_inference_steps` or `custom_timesteps`.")
+    
+            if timesteps is not None:
+                for i in range(1, len(timesteps)):
+                    if timesteps[i] >= timesteps[i - 1]:
+                        raise ValueError("`custom_timesteps` must be in descending order.")
+    
+                if timesteps[0] >= self.config.num_train_timesteps:
+                    raise ValueError(
+                        f"`timesteps` must start before `self.config.train_timesteps`:"
+                        f" {self.config.num_train_timesteps}."
+                    )
+    
+                timesteps = np.array(timesteps, dtype=np.int64)
+                self.custom_timesteps = True
+            else:
+                if num_inference_steps > self.config.num_train_timesteps:
+                    raise ValueError(
+                        f"`num_inference_steps`: {num_inference_steps} cannot be larger than `self.config.train_timesteps`:"
+                        f" {self.config.num_train_timesteps} as the unet model trained with this scheduler can only handle"
+                        f" maximal {self.config.num_train_timesteps} timesteps."
+                    )
+    
+                self.num_inference_steps = num_inference_steps
+                self.custom_timesteps = False
+            </code></pre>
+        </div>
+        <div class="text">
+            <ul>
+                <li>
+                    num_inference_steps: 推理步数不能超过训练时的步数
+                </li>
+                <li>
+                    timesteps: 是降噪从时间步T到0方向走，因此是降序的。
+                </li>
+            </ul> 
+        </div>
+    </div>
 
 
-                </p>
+    <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+        <div class="code">
+            <pre><code class="language-python">
+                # "linspace", "leading", "trailing" corresponds to annotation of Table 2. of https://arxiv.org/abs/2305.08891
+            if self.config.timestep_spacing == "linspace":
+                timesteps = (
+                    np.linspace(0, self.config.num_train_timesteps - 1, num_inference_steps)
+                    .round()[::-1]
+                    .copy()
+                    .astype(np.int64)
+                )
+            elif self.config.timestep_spacing == "leading":
+                step_ratio = self.config.num_train_timesteps // self.num_inference_steps
+                # creates integer timesteps by multiplying by ratio
+                # casting to int to avoid issues when num_inference_step is power of 3
+                timesteps = (np.arange(0, num_inference_steps) * step_ratio).round()[::-1].copy().astype(np.int64)
+                timesteps += self.config.steps_offset
+            elif self.config.timestep_spacing == "trailing":
+                step_ratio = self.config.num_train_timesteps / self.num_inference_steps
+                # creates integer timesteps by multiplying by ratio
+                # casting to int to avoid issues when num_inference_step is power of 3
+                timesteps = np.round(np.arange(self.config.num_train_timesteps, 0, -step_ratio)).astype(np.int64)
+                timesteps -= 1
+            else:
+                raise ValueError(
+                    f"{self.config.timestep_spacing} is not supported. Please make sure to choose one of 'linspace', 'leading' or 'trailing'."
+                )
+
+        self.timesteps = torch.from_numpy(timesteps).to(device)
+            </code></pre>
+        </div>
+        <div class="text">
+            &emsp;&emsp;参考论文Common Diffusion Noise Schedules and Sample Steps are Flawed，如果没有指定timesteps,仅指定了num_inference_steps，代码提供了三种方式： linspace, leading, trailing。如下图所示
+            <div class="image-container">
+                <img src="images/timesteps.jpg">
             </div>
         </div>
+    </div>
 
-        <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
-            <div class="code">
-                <pre><code class="language-python">
-                    这里是代码
-                </code></pre>
-            </div>
-            <div class="text">
-                <p class="text-line" data-line="1">
-                    这里是文本
-                </p>
-            </div>
+
+    <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+        <div class="code">
+            <pre><code class="language-python">
+                
+            </code></pre>
         </div>
-
-
-        <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
-            <div class="code">
-                <pre><code class="language-python">
-                    这里是代码
-                </code></pre>
-            </div>
-            <div class="text">
-                <p class="text-line" data-line="1">
-                    这里是文本
-                </p>
-            </div>
+        <div class="text">
+            
         </div>
+    </div>
+
+
+    <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+        <div class="code">
+            <pre><code class="language-python">
+                
+            </code></pre>
+        </div>
+        <div class="text">
+            
+        </div>
+    </div>
+
+
+    <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+        <div class="code">
+            <pre><code class="language-python">
+                
+            </code></pre>
+        </div>
+        <div class="text">
+            
+        </div>
+    </div>
+
+
 
     </div>
 
@@ -280,4 +470,5 @@ class DDPMScheduler(SchedulerMixin, ConfigMixin):
         }
     </script>
 </body>
+
 </html>
