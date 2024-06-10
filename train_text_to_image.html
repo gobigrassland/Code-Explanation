@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* 禁止水平滚动 */
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            background-color: #f5f5f5;
+            /* 设置容器背景色 */
+        }
+
+        .block {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            background-color: inherit;
+            /* 继承父容器背景色 */
+        }
+
+        .code,
+        .text {
+            padding: 20px;
+            box-sizing: border-box;
+            transition: background-color 0.3s;
+            overflow: auto; /* 确保长代码不会影响布局 */
+        }
+
+        .code {
+            width: 50%;
+            background-color: #f0f0f0;
+            /* 设置代码块默认背景色 */
+        }
+
+        .text {
+            width: 50%;
+            font-family: 'Noto Serif SC', sans-serif;
+            background-color: #f5f5f5;
+            /* 设置文本块默认背景色 */
+        }
+
+        .image-container {
+            text-align: center;
+            /* 使图片在容器内居中 */
+        }
+
+        .image-container img {
+            max-width: 100%;
+            /* 确保图片在容器内保持合适的比例 */
+            height: auto;
+            /* 保持图片比例 */
+        }
+
+        pre {
+            margin: 0;
+            background-color: inherit;
+        }
+
+        .block.highlight .code,
+        .block.highlight .text {
+            background-color: #FFFFFF !important;
+        }
+    </style>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+    <div class="container">
+    <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+        <div class="code">
+            <pre><code class="language-python">
+                
+    for epoch in range(first_epoch, args.num_train_epochs):
+    train_loss = 0.0
+    for step, batch in enumerate(train_dataloader):
+        with accelerator.accumulate(unet):
+            # Convert images to latent space
+            latents = vae.encode(batch["pixel_values"].to(weight_dtype)).latent_dist.sample()
+            latents = latents * vae.config.scaling_factor
+
+            # Sample noise that we'll add to the latents
+            noise = torch.randn_like(latents)
+            if args.noise_offset:
+                # https://www.crosslabs.org//blog/diffusion-with-offset-noise
+                noise += args.noise_offset * torch.randn(
+                    (latents.shape[0], latents.shape[1], 1, 1), device=latents.device
+                )
+            if args.input_perturbation:
+                new_noise = noise + args.input_perturbation * torch.randn_like(noise)
+            bsz = latents.shape[0]
+            # Sample a random timestep for each image
+            timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,), device=latents.device)
+            timesteps = timesteps.long()
+
+            # Add noise to the latents according to the noise magnitude at each timestep
+            # (this is the forward diffusion process)
+            if args.input_perturbation:
+                noisy_latents = noise_scheduler.add_noise(latents, new_noise, timesteps)
+            else:
+                noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
+
+            # Get the text embedding for conditioning
+            encoder_hidden_states = text_encoder(batch["input_ids"], return_dict=False)[0]
+
+            # Get the target for loss depending on the prediction type
+            if args.prediction_type is not None:
+                # set prediction_type of scheduler if defined
+                noise_scheduler.register_to_config(prediction_type=args.prediction_type)
+
+            if noise_scheduler.config.prediction_type == "epsilon":
+                target = noise
+            elif noise_scheduler.config.prediction_type == "v_prediction":
+                target = noise_scheduler.get_velocity(latents, noise, timesteps)
+            else:
+                raise ValueError(f"Unknown prediction type {noise_scheduler.config.prediction_type}")
+
+            # Predict the noise residual and compute loss
+            model_pred = unet(noisy_latents, timesteps, encoder_hidden_states, return_dict=False)[0]
+
+            if args.snr_gamma is None:
+                loss = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
+            else:
+                # Compute loss-weights as per Section 3.4 of https://arxiv.org/abs/2303.09556.
+                # Since we predict the noise instead of x_0, the original formulation is slightly changed.
+                # This is discussed in Section 4.2 of the same paper.
+                snr = compute_snr(noise_scheduler, timesteps)
+                mse_loss_weights = torch.stack([snr, args.snr_gamma * torch.ones_like(timesteps)], dim=1).min(
+                    dim=1
+                )[0]
+                if noise_scheduler.config.prediction_type == "epsilon":
+                    mse_loss_weights = mse_loss_weights / snr
+                elif noise_scheduler.config.prediction_type == "v_prediction":
+                    mse_loss_weights = mse_loss_weights / (snr + 1)
+
+                loss = F.mse_loss(model_pred.float(), target.float(), reduction="none")
+                loss = loss.mean(dim=list(range(1, len(loss.shape)))) * mse_loss_weights
+                loss = loss.mean()
+
+            # Gather the losses across all processes for logging (if we use distributed training).
+            avg_loss = accelerator.gather(loss.repeat(args.train_batch_size)).mean()
+            train_loss += avg_loss.item() / args.gradient_accumulation_steps
+
+            # Backpropagate
+            accelerator.backward(loss)
+            if accelerator.sync_gradients:
+                accelerator.clip_grad_norm_(unet.parameters(), args.max_grad_norm)
+            optimizer.step()
+            lr_scheduler.step()
+            optimizer.zero_grad()
+
+            </code></pre>
+        </div>
+        <div class="text">
+            <ul>
+                <li>
+                    latents: VAE编码器将图片转换为特征
+                </li>
+                <li>
+                    timesteps: 训练过程，为每个图片随机选择一个时间步长
+                </li>
+                <li>
+                    encoder_hidden_states: 为unet生成样本设置额外的条件输入，可以是任意的信息，如文本特征、音频特征等
+                </li>
+                <li>
+                    prediction_type: 模型预测类型，有两种类型，一种是噪音本身，一种是噪音和原始数据的混合体。
+                </li>
+                <li>
+                    model_pred: unet预测的输出 【待补充】
+                </li>
+                <li>
+                    snr: 扩散模型的信噪比。 \( \bf x_t = \sqrt{\bar{\alpha}_t} \bf x_0 + \sqrt{1-\bar{\alpha}_t} \bf{\bar \epsilon_t} \)，具体就是公式中原始信号与噪音信号前的系数平方的比值。
+                    <div style="text-align: center;">
+                        \( snr(t) = \frac{ \bar{\alpha}_t } {1 - \bar{\alpha}_t } \)
+                    </div>
+                </li>
+                <li>
+                    loss: 常规损失就是模型预测输出model_pred与target的均方差。但是论文<a
+                    href="https://arxiv.org/pdf/2303.09556" target="_blank">Efficient Diffusion Training via Min-SNR Weighting Strategy</a>提供了一种snr加权方法可以加快训练速度以及达到更好的模型效果。
+                </li>
+            </ul>
+        </div>
+    </div>
+
+
+    <div class="block" onmouseover="highlight(this)" onmouseout="unhighlight(this)">
+        <div class="code">
+            <pre><code class="language-python">
+                
+            </code></pre>
+        </div>
+        <div class="text">
+            
+        </div>
+    </div>
+
+
+
+    </div>
+
+    <script>
+        function highlight(element) {
+            element.classList.add('highlight');
+        }
+
+        function unhighlight(element) {
+            element.classList.remove('highlight');
+        }
+    </script>
+</body>
+
+</html>
